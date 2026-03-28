@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/app/context/CartContext";
+import { useCart } from "../context/CartContext";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("en-KE", {

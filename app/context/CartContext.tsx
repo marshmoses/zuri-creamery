@@ -3,17 +3,22 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import { productsById } from "@/lib/products";
 
+/* =========================
+   TYPES
+========================= */
+
 export type CartItem = {
   id: string;
   quantity: number;
   name: string;
   price: number;
-  imageSrc: string; // <- needed for CartPage
+  imageSrc: string;
 };
 
 type CartContextType = {
   items: CartItem[];
   subtotal: number;
+  itemCount: number;
   addItem: (id: string, qty?: number) => void;
   increaseQuantity: (id: string, qty?: number) => void;
   decreaseQuantity: (id: string, qty?: number) => void;
@@ -21,22 +26,37 @@ type CartContextType = {
   clearCart: () => void;
 };
 
+/* =========================
+   CONTEXT
+========================= */
+
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+/* =========================
+   PROVIDER
+========================= */
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
+  /* -------------------------
+     ADD ITEM
+  ------------------------- */
   const addItem = (id: string, qty = 1) => {
     const product = productsById[id];
     if (!product) return;
 
-    setItems(prev => {
-      const existing = prev.find(i => i.id === id);
+    setItems((prev) => {
+      const existing = prev.find((i) => i.id === id);
+
       if (existing) {
-        return prev.map(i =>
-          i.id === id ? { ...i, quantity: i.quantity + qty } : i
+        return prev.map((i) =>
+          i.id === id
+            ? { ...i, quantity: i.quantity + qty }
+            : i
         );
       }
+
       return [
         ...prev,
         {
@@ -44,38 +64,72 @@ export function CartProvider({ children }: { children: ReactNode }) {
           quantity: qty,
           name: product.name,
           price: product.price,
-          imageSrc: product.imageSrc, // <- include imageSrc
+          imageSrc: product.imageSrc,
         },
       ];
     });
   };
 
-  const increaseQuantity = (id: string, qty = 1) => addItem(id, qty);
+  /* -------------------------
+     INCREASE
+  ------------------------- */
+  const increaseQuantity = (id: string, qty = 1) => {
+    addItem(id, qty);
+  };
 
+  /* -------------------------
+     DECREASE
+  ------------------------- */
   const decreaseQuantity = (id: string, qty = 1) => {
-    setItems(prev =>
+    setItems((prev) =>
       prev
-        .map(i =>
+        .map((i) =>
           i.id === id
             ? { ...i, quantity: Math.max(1, i.quantity - qty) }
             : i
         )
-        .filter(i => i.quantity > 0)
+        .filter((i) => i.quantity > 0)
     );
   };
 
-  const removeItem = (id: string) =>
-    setItems(prev => prev.filter(i => i.id !== id));
+  /* -------------------------
+     REMOVE ITEM
+  ------------------------- */
+  const removeItem = (id: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+  };
 
-  const clearCart = () => setItems([]);
+  /* -------------------------
+     CLEAR CART
+  ------------------------- */
+  const clearCart = () => {
+    setItems([]);
+  };
 
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  /* -------------------------
+     DERIVED VALUES
+  ------------------------- */
+
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const itemCount = items.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
+
+  /* -------------------------
+     PROVIDER VALUE
+  ------------------------- */
 
   return (
     <CartContext.Provider
       value={{
         items,
         subtotal,
+        itemCount,
         addItem,
         increaseQuantity,
         decreaseQuantity,
@@ -88,8 +142,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/* =========================
+   HOOK
+========================= */
+
 export const useCart = () => {
   const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used within CartProvider");
+  if (!ctx) {
+    throw new Error("useCart must be used within CartProvider");
+  }
   return ctx;
 };

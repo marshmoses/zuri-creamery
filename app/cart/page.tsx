@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../context/CartContext"; // ✅ FIXED IMPORT
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("en-KE", {
@@ -43,6 +43,7 @@ export default function CartPage() {
         </div>
       ) : (
         <div className="grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start">
+          
           {/* CART ITEMS */}
           <section className="rounded-[1.75rem] border border-soft-green/30 bg-white/60 p-6 shadow-sm">
             <div className="flex flex-col gap-4">
@@ -51,10 +52,11 @@ export default function CartPage() {
                   key={item.id}
                   className="flex flex-col gap-4 rounded-[1.25rem] border border-soft-green/25 bg-white/70 p-4 sm:flex-row sm:items-center sm:justify-between hover:shadow-md transition"
                 >
+                  
                   {/* LEFT (IMAGE + INFO) */}
                   <div className="flex items-center gap-4 min-w-0">
                     <Image
-                      src={item.imageSrc || "/products/placeholder.jpg"}
+                      src={item.imageSrc || "/products/placeholder.jpg"} // ✅ SAFE
                       alt={item.name}
                       width={70}
                       height={70}
@@ -108,6 +110,7 @@ export default function CartPage() {
                       Remove
                     </button>
                   </div>
+
                 </div>
               ))}
             </div>
@@ -138,6 +141,7 @@ export default function CartPage() {
               </p>
             </div>
           </aside>
+
         </div>
       )}
     </main>
