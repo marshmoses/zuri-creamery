@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
 
 function formatPrice(price: number) {
@@ -13,7 +12,6 @@ function formatPrice(price: number) {
 }
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const { items, subtotal, clearCart } = useCart();
 
   const isEmpty = items.length === 0;
@@ -24,28 +22,53 @@ export default function CheckoutPage() {
 
   const totalText = useMemo(() => formatPrice(subtotal), [subtotal]);
 
-  const handlePlaceOrder = () => {
-    if (!fullName || !phoneNumber || !deliveryLocation || isEmpty) {
+  const handleWhatsAppOrder = () => {
+    const name = fullName.trim();
+    const phone = phoneNumber.trim();
+    const location = deliveryLocation.trim();
+
+    if (!name || !phone || !location || isEmpty) {
       alert("Please fill all fields");
       return;
     }
 
-    const newOrder = {
-      name: fullName,
-      phone: phoneNumber,
-      location: deliveryLocation,
-      items,
-      total: subtotal,
-      date: new Date().toISOString(),
-    };
+    const orderId = Math.floor(100000 + Math.random() * 900000);
+    const deliveryFee = 100;
+    const total = subtotal + deliveryFee;
 
-    const existing = localStorage.getItem("zuriOrders");
-    const orders = existing ? JSON.parse(existing) : [];
-    orders.push(newOrder);
-    localStorage.setItem("zuriOrders", JSON.stringify(orders));
+    const message = `🧀 *Zuri Creamery Order*
+
+🆔 Order ID: #${orderId}
+
+👤 Name: ${name}
+📞 Phone: ${phone}
+📍 Location: ${location}
+
+🛒 Order:
+${items
+  .map(
+    (item) =>
+      `• ${item.name} x${item.quantity} = KES ${
+        item.price * item.quantity
+      }`
+  )
+  .join("\n")}
+
+🚚 Delivery: KES ${deliveryFee}
+💰 Total: KES ${total}
+
+⏱ Delivery: Within 2–4 hours
+🙏 Thank you for choosing Zuri Creamery!`;
+
+    const encoded = encodeURIComponent(message);
+
+    alert("Redirecting to WhatsApp to complete your order...");
+
+    const url = `https://api.whatsapp.com/send?phone=254717244403&text=${encoded}`;
 
     clearCart();
-    router.push("/order-success");
+
+    window.location.href = url;
   };
 
   return (
@@ -65,40 +88,52 @@ export default function CheckoutPage() {
         <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
           
           {/* LEFT - FORM */}
-          <section className="bg-white rounded-2xl shadow p-6 space-y-5">
+          <section className="bg-white rounded-2xl shadow-lg p-6 space-y-5 border border-green-100">
             <h2 className="text-xl font-semibold text-green-800">
               Delivery Details
             </h2>
 
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full border p-3 rounded-lg"
-            />
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full border border-gray-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
 
-            <input
-              type="tel"
-              placeholder="Phone Number"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full border p-3 rounded-lg"
-            />
+              <input
+                type="tel"
+                placeholder="Phone Number (07XXXXXXXX)"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="w-full border border-gray-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
 
-            <input
-              type="text"
-              placeholder="Delivery Location"
-              value={deliveryLocation}
-              onChange={(e) => setDeliveryLocation(e.target.value)}
-              className="w-full border p-3 rounded-lg"
-            />
+              <input
+                type="text"
+                placeholder="Delivery Location (e.g. Westlands)"
+                value={deliveryLocation}
+                onChange={(e) => setDeliveryLocation(e.target.value)}
+                className="w-full border border-gray-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+
+            {/* TRUST */}
+            <div className="bg-green-50 p-3 rounded-lg text-sm text-green-800">
+              ✅ Freshly made daily  
+              <br />
+              🚚 Same-day delivery in Nairobi  
+              <br />
+              💳 Pay via M-Pesa on delivery  
+            </div>
 
             <button
-              onClick={handlePlaceOrder}
-              className="w-full bg-green-700 text-white py-3 rounded-lg font-semibold hover:bg-green-800 transition"
+              type="button"
+              onClick={handleWhatsAppOrder}
+              className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition text-lg"
             >
-              Place Order
+              Place Order via WhatsApp
             </button>
           </section>
 
@@ -110,10 +145,7 @@ export default function CheckoutPage() {
 
             <div className="mt-4 space-y-3">
               {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex justify-between text-sm"
-                >
+                <div key={item.id} className="flex justify-between text-sm">
                   <span>
                     {item.name} x{item.quantity}
                   </span>
